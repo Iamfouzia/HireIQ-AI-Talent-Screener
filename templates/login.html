@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HireIQ — Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+
+        /* ── Reset ── */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* ── Full page center layout ── */
+        body {
+            background: #080808;
+            color: white;
+            font-family: 'DM Sans', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        /* ── Login card ── */
+        .login-box {
+            background: #111;
+            border: 1px solid #1e1e1e;
+            border-radius: 16px;
+            padding: 48px 40px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        /* ── Logo area ── */
+        .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
+        .logo-icon {
+            font-size: 24px;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 10px;
+            width: 48px; height: 48px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .logo-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; color: white; }
+        .logo-sub { font-size: 11px; color: #444; margin-top: 2px; }
+
+        /* ── Page heading ── */
+        h2 { font-size: 18px; font-weight: 500; color: #888; margin-bottom: 28px; }
+
+        /* ── Input fields ── */
+        .field { margin-bottom: 16px; }
+        label { display: block; font-size: 11px; color: #555; letter-spacing: 0.08em; margin-bottom: 8px; }
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            background: #161616;
+            border: 1px solid #222;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            font-family: 'DM Sans', sans-serif;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus { border-color: #4caf50; }
+
+        /* ── Sign In button ── */
+        .btn-login {
+            width: 100%;
+            padding: 13px;
+            background: #2e7d32;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 8px;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.2s;
+        }
+        .btn-login:hover { background: #1b5e20; transform: translateY(-1px); }
+
+        /* ── Try Demo button — green border to attract attention ── */
+        .btn-demo {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 1px solid #2e7d32;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #4caf50;
+            cursor: pointer;
+            margin-top: 10px;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.2s;
+        }
+        .btn-demo:hover { background: #2e7d3220; transform: translateY(-1px); }
+
+        /* ── "or" divider between buttons ── */
+        .divider { display: flex; align-items: center; gap: 10px; margin: 16px 0 6px; }
+        .divider span { font-size: 11px; color: #555; white-space: nowrap; }
+        .divider::before,
+        .divider::after { content: ''; flex: 1; border-top: 1px solid #2a2a2a; }
+
+        /* ── Error message on wrong credentials ── */
+        .error {
+            background: #e5393510;
+            border: 1px solid #e5393540;
+            color: #e53935;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+
+        /* ── Bottom footer text ── */
+        .footer { text-align: center; font-size: 11px; color: #444; margin-top: 28px; }
+
+    </style>
+</head>
+<body>
+
+<div class="login-box">
+
+    <!-- Logo -->
+    <div class="logo">
+        <div class="logo-icon">⚡</div>
+        <div>
+            <div class="logo-title">HireIQ</div>
+            <div class="logo-sub">AI-Powered Talent Screener</div>
+        </div>
+    </div>
+
+    <!-- Page title -->
+    <h2>Sign in to your account</h2>
+
+    <!-- Error message — shown only if login fails -->
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <!-- Login form -->
+    <form method="POST" action="/login" id="loginForm">
+
+        <div class="field">
+            <label>USERNAME</label>
+            <input type="text" name="username" id="username"
+                   placeholder="Enter username" required autofocus>
+        </div>
+
+        <div class="field">
+            <label>PASSWORD</label>
+            <input type="password" name="password" id="password"
+                   placeholder="Enter password" required>
+        </div>
+
+        <button type="submit" class="btn-login">Sign In</button>
+
+    </form>
+
+    <!-- Divider -->
+    <div class="divider"><span>or</span></div>
+
+    <!-- Try Demo — auto fills credentials and submits form -->
+    <button class="btn-demo" onclick="
+        document.getElementById('username').value = 'admin';
+        document.getElementById('password').value = '1234';
+        document.getElementById('loginForm').submit();
+    ">Try Demo</button>
+
+    <!-- Footer -->
+    <div class="footer">Built on LangChain · FAISS · Groq · Neo4j</div>
+
+</div>
+
+</body>
+</html>

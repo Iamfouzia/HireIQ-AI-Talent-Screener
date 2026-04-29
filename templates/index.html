@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HireIQ</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="layout">
+
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon">⚡</div>
+            <div>
+                <div class="logo-title">HireIQ</div>
+                <div class="logo-sub">AI-Powered Talent Screener</div>
+            </div>
+        </div>
+        <hr>
+        <div>
+            <p class="section-label">ROLE REQUIREMENTS</p>
+            <textarea id="jobDesc" placeholder="e.g. Python ML Engineer with LangChain experience..." rows="4"></textarea>
+        </div>
+        <div>
+            <p class="section-label">CANDIDATE RESUMES</p>
+            <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📄</div>
+                <div class="upload-text">Drop or select resumes</div>
+                <div class="upload-hint">PDF format · Multiple files supported</div>
+            </div>
+            <input type="file" id="fileInput" accept=".pdf" multiple hidden onchange="handleFiles(this)">
+        </div>
+        <div id="fileList"></div>
+        <button class="btn-analyze" onclick="analyze()">Screen Candidates</button>
+        <div class="info-pill">Built with RAG · Neo4j · FAISS · Groq</div>
+    </aside>
+
+    <main class="main">
+
+        <!-- Page header with logout button -->
+        <div class="top-bar">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h1>AI Hiring Intelligence <span class="badge">RAG + VECTOR</span></h1>
+                <a href="/logout" style="
+                    padding: 8px 16px;
+                    background: #1a1a1a;
+                    border: 1px solid #2a2a2a;
+                    border-radius: 8px;
+                    color: #888;
+                    font-size: 12px;
+                    text-decoration: none;
+                    transition: color 0.2s;
+                ">Logout</a>
+            </div>
+            <p class="subtitle">AI-powered candidate screening using semantic search & knowledge graphs</p>
+        </div>
+
+        <!-- Stats Row shown after analysis -->
+        <div class="stats-row" id="statsRow" style="display:none">
+            <div class="stat-card">
+                <div class="stat-label">CANDIDATES SCREENED</div>
+                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-sub">Resumes analyzed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">BEST FIT</div>
+                <div class="stat-value" id="topScore">0%</div>
+                <div class="stat-sub" id="topName">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">ENTITIES MAPPED</div>
+                <div class="stat-value" id="graphNodes">0</div>
+                <div class="stat-sub">Graph nodes extracted</div>
+            </div>
+        </div>
+
+        <!-- Empty State shown before analysis -->
+        <div class="empty-state" id="emptyState">
+            <div class="empty-icon" style="display:none"></div>
+            <div class="empty-text">Ready to screen candidates</div>
+            <div class="empty-sub">Upload resumes and enter role requirements to begin</div>
+        </div>
+
+        <!-- Loading State shown while processing -->
+        <div class="loading" id="loading" style="display:none">
+            <div class="spinner"></div>
+            <p id="loadingMsg">Screening candidates with RAG pipeline...</p>
+            <p class="loading-sub">Building knowledge graphs with Neo4j...</p>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results" style="display:none">
+
+            <!-- Candidate Rankings Card -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Candidate Rankings</span>
+                    <span class="badge-sm" id="jobBadge">-</span>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Select</th><th>Rank</th><th>Candidate</th>
+                            <th>Match Score</th><th>Score Bar</th><th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rankingTable"></tbody>
+                </table>
+
+                <!-- Export Buttons -->
+                <div id="exportButtons" style="display:none;">
+                    <button onclick="exportFile('pdf')"   class="btn-export btn-pdf">⬇ Export PDF</button>
+                    <button onclick="exportFile('excel')" class="btn-export btn-excel">⬇ Export Excel</button>
+                    <button onclick="exportFile('word')"  class="btn-export btn-word">⬇ Export Word</button>
+                </div>
+
+                <!-- Email Section -->
+                <div id="emailSection" style="display:none;">
+                    <p class="section-label" style="margin-top:20px; padding:0 1.25rem;">SEND SHORTLIST EMAIL</p>
+                    <div class="email-row">
+                        <input type="email" id="hrEmail" placeholder="Enter HR email address..." class="email-input">
+                        <button onclick="sendEmail()" class="btn-email">Send Shortlist</button>
+                    </div>
+                    <p id="emailStatus" style="display:none; margin-top:8px; font-size:13px; padding:0 1.25rem;"></p>
+                </div>
+            </div>
+
+            <!-- Detailed AI Analysis Card -->
+            <div class="card" id="analysisCard">
+                <div class="card-header">
+                    <span class="card-title">Detailed AI Analysis</span>
+                </div>
+                <div id="analysisContent"></div>
+            </div>
+
+            <!-- Knowledge Graph Card -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Knowledge Graph</span>
+                    <span class="graph-sub-label">Neo4j — Real-time entity mapping</span>
+                </div>
+                <div id="graphContainer"></div>
+                <div class="graph-legend">
+                    <span class="legend-pill legend-person"><span class="legend-dot" style="background:#4caf50"></span>Person</span>
+                    <span class="legend-pill legend-tech"><span class="legend-dot" style="background:#2196f3"></span>Technology</span>
+                    <span class="legend-pill legend-org"><span class="legend-dot" style="background:#ff9800"></span>Organization</span>
+                    <span class="legend-pill legend-proj"><span class="legend-dot" style="background:#9c27b0"></span>Project</span>
+                    <span class="legend-pill legend-edu"><span class="legend-dot" style="background:#00bcd4"></span>Education</span>
+                </div>
+            </div>
+
+            <!-- Dashboard Analytics Card -->
+            <div class="card" id="analyticsCard" style="display:none">
+                <div class="card-header">
+                    <span class="card-title">Dashboard Analytics</span>
+                </div>
+                <div class="analytics-body">
+                    <div class="metric-row">
+                        <div class="metric-card">
+                            <div class="metric-label">SCREENED</div>
+                            <div class="metric-value" id="m_total">0</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">BEST MATCH</div>
+                            <div class="metric-value metric-green" id="m_best">0%</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">SHORTLISTED</div>
+                            <div class="metric-value metric-blue" id="m_short">0</div>
+                        </div>
+                    </div>
+                    <div class="charts-row">
+                        <div class="chart-box">
+                            <p class="chart-label">CANDIDATE MATCH SCORES</p>
+                            <div class="chart-wrap" style="height:160px">
+                                <canvas id="scoreChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-box">
+                            <p class="chart-label">SHORTLIST BREAKDOWN</p>
+                            <div class="donut-legend">
+                                <span class="donut-item"><span class="donut-dot" style="background:#4caf50"></span>Shortlisted</span>
+                                <span class="donut-item"><span class="donut-dot" style="background:#ff9800"></span>Review</span>
+                                <span class="donut-item"><span class="donut-dot" style="background:#e53935"></span>Rejected</span>
+                            </div>
+                            <div class="chart-wrap" style="height:130px">
+                                <canvas id="statusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-box" style="margin-top:16px">
+                        <p class="chart-label">TOP SKILLS ACROSS CANDIDATES</p>
+                        <div id="skillsChartWrap" class="chart-wrap">
+                            <canvas id="skillsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<script>
+    let selectedFiles = [];
+    let lastResults   = [];
+    let lastJobDesc   = '';
+
+    // Show uploaded file names in sidebar
+    function handleFiles(input) {
+        selectedFiles = Array.from(input.files);
+        document.getElementById('fileList').innerHTML = selectedFiles.map(f => `
+            <div class="file-pill">
+                <span class="file-dot"></span>
+                <span class="file-name">${f.name}</span>
+            </div>`).join('');
+    }
+
+    // Send files to backend and handle response
+    async function analyze() {
+        const jobDesc = document.getElementById('jobDesc').value.trim();
+        if (!jobDesc)              { alert("Please enter role requirements!"); return; }
+        if (!selectedFiles.length) { alert("Please upload candidate resumes!"); return; }
+
+        document.getElementById('loading').style.display    = 'flex';
+        document.getElementById('emptyState').style.display = 'none';
+        document.getElementById('results').style.display    = 'none';
+        document.getElementById('statsRow').style.display   = 'none';
+
+        // Rotate loading messages every 2 seconds
+        const msgs = ["Extracting text from resumes...", "Running RAG pipeline...",
+                      "Scoring candidates with Groq LLM...", "Building Knowledge Graphs...",
+                      "Ranking candidates by match score..."];
+        let idx = 0;
+        const interval = setInterval(() => {
+            document.getElementById('loadingMsg').textContent = msgs[idx++ % msgs.length];
+        }, 2000);
+
+        const formData = new FormData();
+        formData.append('job_description', jobDesc);
+        selectedFiles.forEach(f => formData.append('resumes', f));
+
+        try {
+            const res  = await fetch('/analyze', { method: 'POST', body: formData });
+            const data = await res.json();
+            clearInterval(interval);
+            document.getElementById('loading').style.display = 'none';
+            if (data.success) {
+                displayResults(data.results, jobDesc);
+            } else {
+                alert("Error: " + data.error);
+                document.getElementById('emptyState').style.display = 'block';
+            }
+        } catch(e) {
+            clearInterval(interval);
+            document.getElementById('loading').style.display    = 'none';
+            document.getElementById('emptyState').style.display = 'block';
+            alert("Something went wrong!");
+        }
+    }
+
+    // Build and display all result sections
+    function displayResults(results, jobDesc) {
+        lastResults = results;
+        lastJobDesc = jobDesc;
+
+        const totalNodes  = results.reduce((s, r) => s + (r.graph?.nodes?.length || 0), 0);
+        const shortlisted = results.filter(r => r.score >= 70).length;
+
+        // Update stat cards
+        document.getElementById('totalCount').textContent = results.length;
+        document.getElementById('topScore').textContent   = (results[0]?.score || 0) + '%';
+        document.getElementById('topName').textContent    = results[0]?.name || '-';
+        document.getElementById('graphNodes').textContent = totalNodes;
+        document.getElementById('statsRow').style.display = 'grid';
+        document.getElementById('jobBadge').textContent   = jobDesc.substring(0, 20);
+
+        // Update analytics metric cards
+        document.getElementById('m_total').textContent = results.length;
+        document.getElementById('m_best').textContent  = (results[0]?.score || 0) + '%';
+        document.getElementById('m_short').textContent = shortlisted;
+
+        const colors = ['#4caf50', '#2196f3', '#ff9800', '#e91e63'];
+
+        // Build ranking table rows with checkbox and status
+        document.getElementById('rankingTable').innerHTML = results.map((r, i) => {
+            const score = r.score || 0;
+            let status, sc;
+            if (score >= 70)      { status = 'Shortlisted'; sc = '#4caf50'; }
+            else if (score >= 50) { status = 'Review';      sc = '#ff9800'; }
+            else                  { status = 'Rejected';    sc = '#e53935'; }
+            const c = colors[i] || '#888';
+            return `<tr>
+                <td><input type="checkbox" class="candidate-checkbox" data-name="${r.name}" data-score="${score}" ${score >= 70 ? 'checked' : ''}></td>
+                <td><div class="rank-badge" style="background:${c}20;color:${c}">${i+1}</div></td>
+                <td><strong>${r.name}</strong></td>
+                <td><strong style="color:${c}">${score}%</strong></td>
+                <td><div class="score-bar"><div class="score-fill" style="width:${score}%;background:${c}"></div></div></td>
+                <td><span class="status-pill" style="background:${sc}20;color:${sc}">${status}</span></td>
+            </tr>`;
+        }).join('');
+
+        // Build detailed AI analysis with clean markdown formatting
+        document.getElementById('analysisContent').innerHTML = results.map(r => `
+            <div class="analysis-block">
+                <h3>${r.name} — ${r.score}% Match</h3>
+                ${Object.entries(r.analysis || {}).map(([q, a]) => `
+                    <div class="analysis-item">
+                        <div class="analysis-q">${q}</div>
+                        <div class="analysis-a">${formatAnalysis(a)}</div>
+                    </div>`).join('')}
+            </div>`).join('');
+
+        // Render knowledge graph and analytics charts
+        renderGraph(results.flatMap(r => r.graph?.nodes || []), results.flatMap(r => r.graph?.edges || []));
+        renderAnalytics(results);
+
+        // Show all sections
+        document.getElementById('results').style.display       = 'block';
+        document.getElementById('exportButtons').style.display = 'flex';
+        document.getElementById('emailSection').style.display  = 'block';
+    }
+
+    // Download file from export route
+    async function exportFile(format) {
+        const ext = { pdf: 'pdf', excel: 'xlsx', word: 'docx' };
+        try {
+            const res  = await fetch(`/export/${format}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ results: lastResults, job_description: lastJobDesc })
+            });
+            const blob = await res.blob();
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href = url; a.download = `hireiq_results.${ext[format]}`; a.click();
+            URL.revokeObjectURL(url);
+        } catch(e) { alert("Export failed! Try again."); }
+    }
+
+    // Send shortlist email to HR
+    async function sendEmail() {
+        const hrEmail  = document.getElementById('hrEmail').value.trim();
+        const statusEl = document.getElementById('emailStatus');
+        if (!hrEmail) { alert("Please enter HR email address!"); return; }
+        const checked = document.querySelectorAll('.candidate-checkbox:checked');
+        if (!checked.length) { alert("Please select at least one candidate!"); return; }
+        const selected = Array.from(checked).map(cb => ({ name: cb.dataset.name, score: cb.dataset.score }));
+        statusEl.style.display = 'block';
+        statusEl.style.color   = '#888';
+        statusEl.textContent   = 'Sending email...';
+        try {
+            const res  = await fetch('/send-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ hr_email: hrEmail, candidates: selected, job_description: lastJobDesc })
+            });
+            const data = await res.json();
+            statusEl.style.color = data.success ? '#4caf50' : '#e53935';
+            statusEl.textContent = data.success ? 'Email sent successfully!' : 'Error: ' + data.error;
+        } catch(e) {
+            statusEl.style.color = '#e53935';
+            statusEl.textContent = 'Email failed! Try again.';
+        }
+    }
+
+    // Draw SVG knowledge graph in circular layout
+    function renderGraph(nodes, edges) {
+        const colors = { Person:'#4caf50', Technology:'#2196f3', Organization:'#ff9800', Project:'#9c27b0', Education:'#00bcd4' };
+        const positions = {};
+        const cx = 500, cy = 280, r = 210;
+        nodes.forEach((n, i) => {
+            const angle = (2 * Math.PI * i) / nodes.length - Math.PI / 2;
+            positions[n.id] = { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+        });
+        let svg = `<svg width="100%" height="560" viewBox="0 0 1000 560" style="background:#0a0a0a;border-radius:0 0 12px 12px;">`;
+        svg += `<circle cx="500" cy="280" r="210" fill="none" stroke="#161616" stroke-width="1"/>`;
+        svg += `<circle cx="500" cy="280" r="140" fill="none" stroke="#131313" stroke-width="1"/>`;
+        edges.forEach(e => {
+            const s = positions[e.source], t = positions[e.target];
+            if (s && t) svg += `<line x1="${s.x}" y1="${s.y}" x2="${t.x}" y2="${t.y}" stroke="#1e1e1e" stroke-width="1.2"/>`;
+        });
+        nodes.forEach(n => {
+            const p = positions[n.id]; if (!p) return;
+            const color = colors[n.label] || '#888';
+            const size  = n.label === 'Person' ? 22 : 13;
+            const label = n.id.length > 12 ? n.id.substring(0, 12) + '…' : n.id;
+            svg += `<circle cx="${p.x}" cy="${p.y}" r="${size}" fill="${color}22" stroke="${color}" stroke-width="1.5"/>`;
+            svg += `<text x="${p.x}" y="${p.y+4}" fill="${color}" font-size="9" text-anchor="middle" font-weight="500" font-family="DM Sans,sans-serif">${label}</text>`;
+        });
+        svg += `</svg>`;
+        document.getElementById('graphContainer').innerHTML = svg;
+    }
+
+    // Draw 3 Chart.js analytics charts
+    function renderAnalytics(results) {
+        Chart.defaults.color = '#555';
+        Chart.defaults.borderColor = '#1a1a1a';
+
+        // Destroy old charts to prevent duplicate error
+        ['scoreChart', 'statusChart', 'skillsChart'].forEach(id => {
+            const c = Chart.getChart(id);
+            if (c) c.destroy();
+        });
+
+        // Bar chart: candidate match scores
+        new Chart(document.getElementById('scoreChart'), {
+            type: 'bar',
+            data: {
+                labels: results.map(r => r.name.substring(0, 14)),
+                datasets: [{
+                    data: results.map(r => r.score),
+                    backgroundColor: results.map(r => r.score>=70 ? '#4caf5055' : r.score>=50 ? '#ff980055' : '#e5393555'),
+                    borderColor:     results.map(r => r.score>=70 ? '#4caf50'   : r.score>=50 ? '#ff9800'   : '#e53935'),
+                    borderWidth: 1.5, borderRadius: 5, borderSkipped: false, barThickness: 22
+                }]
+            },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.raw + '% match' }}},
+                scales: {
+                    x: { min:0, max:100, grid:{color:'#161616'}, ticks:{color:'#444', font:{size:11}, callback: v => v+'%'}},
+                    y: { grid:{display:false}, ticks:{color:'#666', font:{size:11}}}
+                }
+            }
+        });
+
+        // Doughnut chart: shortlisted vs review vs rejected
+        const sl = results.filter(r => r.score >= 70).length;
+        const rv = results.filter(r => r.score >= 50 && r.score < 70).length;
+        const rj = results.filter(r => r.score < 50).length;
+        new Chart(document.getElementById('statusChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Shortlisted', 'Review', 'Rejected'],
+                datasets: [{
+                    data: [sl, rv, rj],
+                    backgroundColor: ['#4caf5055', '#ff980055', '#e5393555'],
+                    borderColor:     ['#4caf50',   '#ff9800',   '#e53935'],
+                    borderWidth: 1.5, hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '68%',
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.label + ': ' + c.raw }}}
+            }
+        });
+
+        // Bar chart: top 10 skills from knowledge graph nodes
+        const skillCount = {};
+        results.forEach(r => {
+            (r.graph?.nodes || []).filter(n => n.label === 'Technology')
+                .forEach(n => { skillCount[n.id] = (skillCount[n.id] || 0) + 1; });
+        });
+        const topSkills = Object.entries(skillCount).sort((a, b) => b[1] - a[1]).slice(0, 10);
+        document.getElementById('skillsChartWrap').style.height = Math.max(200, topSkills.length * 34 + 40) + 'px';
+        new Chart(document.getElementById('skillsChart'), {
+            type: 'bar',
+            data: {
+                labels: topSkills.map(s => s[0]),
+                datasets: [{
+                    data: topSkills.map(s => s[1]),
+                    backgroundColor: topSkills.map(s => s[1] >= 2 ? '#2196f355' : '#2196f330'),
+                    borderColor:     topSkills.map(s => s[1] >= 2 ? '#2196f3'   : '#2196f388'),
+                    borderWidth: 1.5, borderRadius: 5, borderSkipped: false, barThickness: 16
+                }]
+            },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.raw + ' candidate' + (c.raw > 1 ? 's' : '') }}},
+                scales: {
+                    x: { min:0, grid:{color:'#161616'}, ticks:{color:'#444', font:{size:11}, stepSize:1}},
+                    y: { grid:{display:false}, ticks:{color:'#666', font:{size:11}}}
+                }
+            }
+        });
+
+        document.getElementById('analyticsCard').style.display = 'block';
+    }
+
+    // Convert markdown to clean HTML for analysis text
+    function formatAnalysis(t) {
+        return (t || '')
+            .replace(/#{1,3}\s*(.+)/g, '<strong class="a-head">$1</strong>')
+            .replace(/\*\*(.+?)\*\*/g, '<strong class="a-bold">$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>');
+    }
+
+</script>
+</body>
+</html>
