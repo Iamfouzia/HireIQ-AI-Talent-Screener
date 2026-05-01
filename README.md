@@ -42,4 +42,10 @@ SECRET_KEY=your_secret
 5. Open `http://127.0.0.1:5000`
 
 ## Screenshots
-*(Add screenshots here)*
+<img width="1920" height="1019" alt="Screenshot (553)" src="https://github.com/user-attachments/assets/58c6d9b9-5bb7-43f6-ad4a-fa0cef75c284" />
+<img width="1920" height="1005" alt="Screenshot (562)" src="https://github.com/user-attachments/assets/8b924d90-084a-46ba-9faf-f990d538145b" />
+<img width="1920" height="1015" alt="Screenshot (569)" src="https://github.com/user-attachments/assets/1b2d63b0-32d1-4b02-b64b-c17d788f834b" />
+<img width="1920" height="1015" alt="Screenshot (570)" src="https://github.com/user-attachments/assets/d15c39fc-7561-4781-8878-3126c8ef9ef7" />
+<img width="1920" height="1022" alt="Screenshot (574)" src="https://github.com/user-attachments/assets/66a0db2e-2a2e-46bd-992f-276bd535147a" />
+<img width="1920" height="1025" alt="Screenshot (575)" src="https://github.com/user-attachments/assets/df87a0f5-8c7c-4a8f-8dd6-6b763b99139b" />
+
