@@ -282,9 +282,9 @@ def send_email():
     msg.attach(MIMEText(body, 'plain'))
 
     try:
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
         server.login(os.getenv('EMAIL_ADDRESS'), os.getenv('EMAIL_PASSWORD'))
+        
         server.sendmail(os.getenv('EMAIL_ADDRESS'), hr_email, msg.as_string())
         server.quit()
         return jsonify({"success": True, "message": "Email sent successfully!"})
