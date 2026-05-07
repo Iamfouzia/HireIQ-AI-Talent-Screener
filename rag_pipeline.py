@@ -24,7 +24,7 @@ embeddings = HuggingFaceEmbeddings(
 # ── Step 2: Initialize Groq LLM
 llm = ChatGroq(
     temperature=0,
-    model_name="llama3-8b-8192",
+    model_name="llama-3.1-8b-instant",
     groq_api_key=os.getenv("GROQ_API_KEY")
 )
 
