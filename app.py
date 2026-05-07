@@ -281,16 +281,18 @@ def send_email():
     msg['Subject'] = f"HireIQ Shortlist — {job_desc[:40]}"
     msg.attach(MIMEText(body, 'plain'))
 
+
     try:
-        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.ehlo()
+        server.starttls()
+        server.ehlo()
         server.login(os.getenv('EMAIL_ADDRESS'), os.getenv('EMAIL_PASSWORD'))
-        
         server.sendmail(os.getenv('EMAIL_ADDRESS'), hr_email, msg.as_string())
         server.quit()
         return jsonify({"success": True, "message": "Email sent successfully!"})
     except Exception as e:
+        print(f"[Email] Error: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
-
-
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
