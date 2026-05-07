@@ -283,13 +283,14 @@ def send_email():
 
 
     try:
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.ehlo()
-        server.starttls()
-        server.ehlo()
-        server.login(os.getenv('EMAIL_ADDRESS'), os.getenv('EMAIL_PASSWORD'))
-        server.sendmail(os.getenv('EMAIL_ADDRESS'), hr_email, msg.as_string())
-        server.quit()
+        import resend
+        resend.api_key = os.getenv('RESEND_API_KEY')
+        resend.Emails.send({
+            "from": "onboarding@resend.dev",
+            "to": hr_email,
+            "subject": f"HireIQ Shortlist — {job_desc[:40]}",
+            "text": body
+        })
         return jsonify({"success": True, "message": "Email sent successfully!"})
     except Exception as e:
         print(f"[Email] Error: {str(e)}")
