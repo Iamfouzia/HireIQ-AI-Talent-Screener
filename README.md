@@ -153,7 +153,11 @@ HireIQ-AI-Talent-Screener/
 └── requirements.txt     # Dependencies
 ```
 
+## Author
 
+**Fouzia Khan**
+
+[GitHub](https://github.com/Iamfouzia) · [LinkedIn](https://linkedin.com/in/fouzia-khan-35a73a258)
 
 
 
