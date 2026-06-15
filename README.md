@@ -2,7 +2,7 @@
 
 > Enterprise-grade resume screening system using RAG pipeline, Knowledge Graph, and LLM scoring.
 
-**Live Demo:** [hireiq-ai-talent-screener-production.up.railway.app](https://hireiq-ai-talent-screener-production.up.railway.app)
+**Live Demo:** https://foziakahn-hireiq.hf.space
 
 ---
 
